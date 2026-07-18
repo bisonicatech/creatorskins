@@ -26,7 +26,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ error: "internal" }, { status: 500 });
     }
 
-    if (!campaign || campaign.brands.user_id !== user.id) {
+    // Supabase's client infers a joined relation like `brands` as an array type
+    // without generated types, even though `!inner` + `.single()` guarantee it's
+    // actually one object at runtime — cast once here rather than at every access.
+    const brand = campaign?.brands as unknown as { id: string; user_id: string; stripe_customer_id: string | null };
+
+    if (!campaign || brand.user_id !== user.id) {
       return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
     }
 
@@ -44,11 +49,11 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ error: "Campaign is not eligible for funding right now" }, { status: 409 });
     }
 
-    let customerId = campaign.brands.stripe_customer_id as string | null;
+    let customerId = brand.stripe_customer_id;
     if (!customerId) {
       const customer = await stripe.customers.create({ email: user.email });
       customerId = customer.id;
-      await admin.from("brands").update({ stripe_customer_id: customerId }).eq("id", campaign.brands.id);
+      await admin.from("brands").update({ stripe_customer_id: customerId }).eq("id", brand.id);
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL!;

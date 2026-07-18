@@ -44,6 +44,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Submission not found" }, { status: 404 });
     }
 
+    // Supabase's client infers a joined relation like `campaigns`/`creators` as an
+    // array type without generated types, even though they're actually single
+    // objects at runtime — cast once here rather than at every access.
+    const campaign = submission.campaigns as unknown as {
+      currency: string;
+      escrow_balance: number;
+      max_submissions_per_creator: number;
+    };
+    const creator = submission.creators as unknown as {
+      stripe_account_id: string | null;
+      stripe_payouts_enabled: boolean;
+    };
+
     if (submission.status !== "verified") {
       return NextResponse.json({ error: "Submission is not verified" }, { status: 409 });
     }
@@ -84,27 +97,27 @@ export async function POST(request: Request) {
       .eq("campaign_id", submission.campaign_id)
       .eq("creator_id", submission.creator_id);
 
-    if ((existingPayouts?.length ?? 0) >= submission.campaigns.max_submissions_per_creator) {
+    if ((existingPayouts?.length ?? 0) >= campaign.max_submissions_per_creator) {
       return NextResponse.json(
         {
-          error: `This creator has already reached the ${submission.campaigns.max_submissions_per_creator}-payout limit for this campaign`,
+          error: `This creator has already reached the ${campaign.max_submissions_per_creator}-payout limit for this campaign`,
         },
         { status: 409 }
       );
     }
 
-    if (!submission.creators.stripe_account_id) {
+    if (!creator.stripe_account_id) {
       return NextResponse.json({ error: "Creator has not completed payout onboarding" }, { status: 409 });
     }
 
-    let payoutsEnabled = submission.creators.stripe_payouts_enabled;
+    let payoutsEnabled = creator.stripe_payouts_enabled;
     if (!payoutsEnabled) {
       // Supabase's cached status is only as fresh as the last account.updated webhook we
       // actually received and processed — that can lag or, as observed during testing, miss
       // entirely. Before hard-blocking a real release, check Stripe directly (same v2 lookup
       // the webhook itself uses) and self-heal the cached row if it's actually ready.
       try {
-        const resolved = await resolveConnectStatus(submission.creators.stripe_account_id);
+        const resolved = await resolveConnectStatus(creator.stripe_account_id);
         payoutsEnabled = resolved.payoutsEnabled;
         if (payoutsEnabled) {
           await admin
@@ -121,7 +134,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Creator has not completed payout onboarding" }, { status: 409 });
     }
 
-    if (submission.campaigns.escrow_balance < submission.agreed_amount) {
+    if (campaign.escrow_balance < submission.agreed_amount) {
       return NextResponse.json(
         { error: "Insufficient escrow balance for this payout — the campaign has been over-assigned" },
         { status: 409 }
@@ -129,7 +142,7 @@ export async function POST(request: Request) {
     }
 
     const { commissionAmount, creatorAmount } = splitPayout(submission.agreed_amount);
-    const currency = submission.campaigns.currency;
+    const currency = campaign.currency;
 
     // Claim the payout via the unique constraint on submission_id before touching Stripe,
     // so two concurrent release calls can't both create a Transfer for the same submission.
@@ -156,7 +169,7 @@ export async function POST(request: Request) {
       transfer = await stripe.transfers.create({
         amount: creatorAmount,
         currency,
-        destination: submission.creators.stripe_account_id,
+        destination: creator.stripe_account_id,
         transfer_group: `campaign_${submission.campaign_id}`,
         metadata: { submission_id: submissionId, campaign_id: submission.campaign_id },
       });

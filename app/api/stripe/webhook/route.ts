@@ -44,12 +44,15 @@ export async function POST(request: Request) {
       const invoice = event.data.object as Stripe.Invoice;
       const campaignId = invoice.metadata?.campaign_id;
       if (campaignId) {
+        // `payment_intent` isn't in this SDK version's Invoice type for the pinned
+        // API version, but it's still present on the actual payload — cast through
+        // `any` rather than guess at a renamed field and silently change behavior.
         await fundCampaign(
           admin,
           campaignId,
           invoice.amount_paid,
           invoice.currency,
-          invoice.payment_intent as string
+          (invoice as any).payment_intent as string
         );
       }
       break;
