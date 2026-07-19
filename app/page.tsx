@@ -72,8 +72,12 @@ export default async function Home() {
           {c.hero_eyebrow}
         </div>
 
-        <h1 className="mt-6 font-display text-5xl font-light tracking-tight text-white sm:text-6xl">
-          CreatorSkins
+        <h1 className="mt-6">
+          <img
+            src="/creatorskins-logo-primary-dark-cropped.png"
+            alt="CreatorSkins"
+            className="h-auto w-[560px] sm:w-[720px]"
+          />
         </h1>
         <p className="mt-2 font-display text-3xl font-bold tracking-tight text-accent sm:text-4xl">
           {c.hero_strapline}
