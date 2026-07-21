@@ -57,11 +57,16 @@ export function ReelEmbed({ url, size = "compact" }: { url: string; size?: "comp
 
   // "compact" is sized for dense dashboard rows (name/rate/status sitting next to
   // the video) — "large" is for the public marketing homepage, where the video is
-  // the main visual and should scale up substantially on bigger screens rather
-  // than staying thumbnail-sized regardless of viewport.
+  // the main visual. Below md it's still width-driven like compact, just bigger.
+  // At md+ it switches to height-driven (vh-capped, inline-block + aspect-ratio,
+  // width auto) — these are 9:16 portrait clips, so scaling by width alone (as
+  // the previous version did) makes height balloon past a laptop's viewport
+  // (640px wide -> 1138px tall) and the video no longer fits on one screen.
+  // Capping by height instead means it always fits vertically, with width
+  // following proportionally.
   const sizeClass =
     size === "large"
-      ? "w-full max-w-[340px] sm:max-w-[400px] md:max-w-[460px] lg:max-w-[560px] xl:max-w-[640px]"
+      ? "w-full max-w-[340px] sm:max-w-[400px] md:w-auto md:max-w-none md:inline-block md:aspect-[9/16] md:h-[42vh] md:max-h-[380px] lg:h-[46vh] lg:max-h-[420px] xl:h-[48vh] xl:max-h-[460px]"
       : "w-full max-w-[220px]";
 
   useEffect(() => {
