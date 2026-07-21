@@ -50,10 +50,19 @@ function loadScriptOnce(src: string, onLoad?: () => void) {
 // case in a React app. YouTube needs none of this — it's a plain iframe we
 // fully control, so it's the only one of the three with predictable sizing;
 // TikTok/Instagram embeds size themselves and won't perfectly match.
-export function ReelEmbed({ url }: { url: string }) {
+export function ReelEmbed({ url, size = "compact" }: { url: string; size?: "compact" | "large" }) {
   const ref = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { platform, youtubeId } = detectPlatform(url);
+
+  // "compact" is sized for dense dashboard rows (name/rate/status sitting next to
+  // the video) — "large" is for the public marketing homepage, where the video is
+  // the main visual and should scale up substantially on bigger screens rather
+  // than staying thumbnail-sized regardless of viewport.
+  const sizeClass =
+    size === "large"
+      ? "w-full max-w-[340px] sm:max-w-[400px] md:max-w-[460px] lg:max-w-[560px] xl:max-w-[640px]"
+      : "w-full max-w-[220px]";
 
   useEffect(() => {
     if (platform === "tiktok") {
@@ -85,7 +94,7 @@ export function ReelEmbed({ url }: { url: string }) {
   if (!url || !platform) return null;
 
   return (
-    <div ref={ref} className="w-full max-w-[220px] overflow-hidden border border-white/10 bg-surface">
+    <div ref={ref} className={`${sizeClass} overflow-hidden border border-white/10 bg-surface`}>
       {platform === "youtube" && youtubeId && (
         <iframe
           // autoplay requires mute=1 (browsers block unmuted autoplay, same reason

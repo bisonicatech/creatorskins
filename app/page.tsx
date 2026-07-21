@@ -102,7 +102,7 @@ export default async function Home() {
 
         {c.reel_1_url && (
           <div className="mt-10">
-            <ReelEmbed url={c.reel_1_url} />
+            <ReelEmbed url={c.reel_1_url} size="large" />
           </div>
         )}
       </section>
@@ -124,7 +124,7 @@ export default async function Home() {
 
               {a.reelUrl && (
                 <div className="mt-6">
-                  <ReelEmbed url={a.reelUrl} />
+                  <ReelEmbed url={a.reelUrl} size="large" />
                 </div>
               )}
 
