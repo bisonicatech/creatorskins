@@ -88,7 +88,11 @@ export function ReelEmbed({ url }: { url: string }) {
     <div ref={ref} className="w-full max-w-[220px] overflow-hidden border border-white/10 bg-surface">
       {platform === "youtube" && youtubeId && (
         <iframe
-          src={`https://www.youtube.com/embed/${youtubeId}`}
+          // autoplay requires mute=1 (browsers block unmuted autoplay, same reason
+          // as the native video fix above) — looping a single video on YouTube's
+          // embed specifically requires playlist set to that same video's ID, not
+          // just loop=1 alone, which is a real quirk of their embed API.
+          src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=1&loop=1&playlist=${youtubeId}&playsinline=1`}
           className="aspect-[9/16] w-full"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
