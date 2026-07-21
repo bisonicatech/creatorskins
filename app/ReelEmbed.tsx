@@ -60,13 +60,14 @@ export function ReelEmbed({ url, size = "compact" }: { url: string; size?: "comp
   // the main visual. Below md it's still width-driven like compact, just bigger.
   // At md+ it switches to height-driven (vh-capped, inline-block + aspect-ratio,
   // width auto) — these are 9:16 portrait clips, so scaling by width alone (as
-  // the previous version did) makes height balloon past a laptop's viewport
+  // an earlier version did) makes height balloon past a laptop's viewport
   // (640px wide -> 1138px tall) and the video no longer fits on one screen.
   // Capping by height instead means it always fits vertically, with width
-  // following proportionally.
+  // following proportionally. Targets ~65-70% of viewport height at typical
+  // laptop/desktop widths (xl) — big and prominent without overflowing.
   const sizeClass =
     size === "large"
-      ? "w-full max-w-[340px] sm:max-w-[400px] md:w-auto md:max-w-none md:inline-block md:aspect-[9/16] md:h-[42vh] md:max-h-[380px] lg:h-[46vh] lg:max-h-[420px] xl:h-[48vh] xl:max-h-[460px]"
+      ? "w-full max-w-[340px] sm:max-w-[400px] md:w-auto md:max-w-none md:inline-block md:aspect-[9/16] md:h-[58vh] md:max-h-[480px] lg:h-[64vh] lg:max-h-[560px] xl:h-[68vh] xl:max-h-[620px]"
       : "w-full max-w-[220px]";
 
   useEffect(() => {
